@@ -117,6 +117,80 @@ function Remove-Specific {
     }
 }
 
+# Function to auto-find NetSupport folders and list contents
+function Auto-FindNetSupport {
+    Write-Host "Choose scan locations:" -ForegroundColor Cyan
+    Write-Host "1. Program Files"
+    Write-Host "2. Program Files (x86)"
+    Write-Host "3. AppData"
+    Write-Host "4. All"
+    $locationChoice = Read-Host "Enter your choice (1-4)"
+
+    $scanPaths = @()
+    switch ($locationChoice) {
+        1 { $scanPaths = @($env:ProgramFiles) }
+        2 { $scanPaths = @("${env:ProgramFiles(x86)}") }
+        3 { $scanPaths = @($env:APPDATA) }
+        4 { $scanPaths = @($env:ProgramFiles, "${env:ProgramFiles(x86)}", $env:APPDATA) }
+        default { Write-Host "Invalid choice. Scanning all by default." -ForegroundColor Yellow; $scanPaths = @($env:ProgramFiles, "${env:ProgramFiles(x86)}", $env:APPDATA) }
+    }
+
+    $foundFolders = @()
+    Write-Host "Scanning selected locations for folders named 'NetSupport'... This may take a moment." -ForegroundColor Cyan
+    foreach ($scanPath in $scanPaths) {
+        if (Test-Path $scanPath) {
+            $netsupportFolders = Get-ChildItem -Path $scanPath -Directory -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq "NetSupport" }
+            foreach ($folder in $netsupportFolders) {
+                $foundFolders += $folder.FullName
+            }
+        }
+    }
+
+    if ($foundFolders.Count -eq 0) {
+        Write-Host "No folders named 'NetSupport' found in selected locations." -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "Found NetSupport folders:" -ForegroundColor Green
+    $i = 1
+    foreach ($folder in $foundFolders) {
+        Write-Host "$i. $folder"
+        # List contents (subfolders and files, up to 10 items for brevity)
+        $contents = Get-ChildItem -Path $folder -ErrorAction SilentlyContinue
+        $subfolders = $contents | Where-Object { $_.PSIsContainer }
+        $files = $contents | Where-Object { -not $_.PSIsContainer }
+        if ($subfolders) {
+            Write-Host "  Subfolders:"
+            $subfolders | Select-Object -First 5 | ForEach-Object { Write-Host "    - $($_.Name)" }
+            if ($subfolders.Count -gt 5) { Write-Host "    ... and $($subfolders.Count - 5) more subfolders" }
+        }
+        if ($files) {
+            Write-Host "  Files:"
+            $files | Select-Object -First 5 | ForEach-Object { Write-Host "    - $($_.Name)" }
+            if ($files.Count -gt 5) { Write-Host "    ... and $($files.Count - 5) more files" }
+        }
+        $i++
+    }
+
+    Write-Host ""
+    $choice = Read-Host "Enter the number of the folder to remove (or '0' to cancel)"
+    if ($choice -match '^\d+$' -and [int]$choice -ge 1 -and [int]$choice -le $foundFolders.Count) {
+        $selectedPath = $foundFolders[[int]$choice - 1]
+        Write-Host "Confirm removal of: $selectedPath and all contents? (y/n): " -NoNewline
+        $confirm = Read-Host
+        if ($confirm -eq 'y') {
+            try {
+                Remove-Item -Path $selectedPath -Recurse -Force
+                Write-Host "Removed: $selectedPath" -ForegroundColor Green
+            } catch {
+                Write-Host "Failed to remove: $selectedPath ($_.Exception.Message)" -ForegroundColor Red
+            }
+        }
+    } else {
+        Write-Host "Cancelled or invalid choice." -ForegroundColor Yellow
+    }
+}
+
 # Main menu loop
 do {
     Clear-Host
@@ -124,15 +198,17 @@ do {
     Write-Host "1. List NetSupport School Folders/Files"
     Write-Host "2. Remove All NetSupport School Folders/Files"
     Write-Host "3. Remove Specific Folder/File"
-    Write-Host "4. Exit"
+    Write-Host "4. Auto-Find NetSupport Folders and List Contents"
+    Write-Host "5. Exit"
     Write-Host ""
-    $choice = Read-Host "Choose an option (1-4)"
+    $choice = Read-Host "Choose an option (1-5)"
 
     switch ($choice) {
         1 { List-Folders; Read-Host "Press Enter to continue" }
         2 { Remove-AllFolders; Read-Host "Press Enter to continue" }
         3 { Remove-Specific; Read-Host "Press Enter to continue" }
-        4 { Write-Host "Exiting..." }
+        4 { Auto-FindNetSupport; Read-Host "Press Enter to continue" }
+        5 { Write-Host "Exiting..." }
         default { Write-Host "Invalid choice. Try again." -ForegroundColor Red; Read-Host "Press Enter to continue" }
     }
-} while ($choice -ne 4)
+} while ($choice -ne 5)
