@@ -127,4 +127,4 @@ Always run PowerShell as Administrator
 Use responsibly and legally
 
 Designed for Windows environments
-(we lazy to type all of text so  we just use chatgpt 
+(we lazy to type all of text so  we just use chatgpt to type all read me but code had make by only one guy)
