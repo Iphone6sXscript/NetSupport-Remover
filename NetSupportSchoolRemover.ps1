@@ -1,214 +1,196 @@
-# NetSupport School Remover with Menu UI
+# NetSupport School Remover
 # Run as Administrator. Use at your own risk.
 
-# Function to check for admin rights
+# ==============================
+# Admin Check
+# ==============================
 function Test-Admin {
-    $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
-    if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        Write-Host "This script requires administrator privileges. Relaunching as admin..." -ForegroundColor Red
-        Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    $id = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $p = New-Object Security.Principal.WindowsPrincipal($id)
+    if (-not $p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        Write-Host "Administrator rights required. Relaunching..." -ForegroundColor Red
+        Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
         exit
     }
 }
-
-# Call admin check
 Test-Admin
 
-# Function to get folder paths based on system
+# ==============================
+# NetSupport Paths
+# ==============================
 function Get-NetSupportPaths {
-    $is64Bit = [Environment]::Is64BitOperatingSystem
-    $programFiles = if ($is64Bit) { "${env:ProgramFiles(x86)}" } else { $env:ProgramFiles }
-    $appData = $env:APPDATA
-    $userProfile = $env:USERPROFILE
+    $pf = $env:ProgramFiles
+    $pfx86 = ${env:ProgramFiles(x86)}
+    $appdata = $env:APPDATA
+    $user = $env:USERPROFILE
 
-    return @{
-        TutorReports = "$programFiles\NetSupport\NetSupport School\Reports"
-        TutorTests = "$programFiles\NetSupport\NetSupport School\Tests"
-        ClassLists = "$appData\NetSupport\NetSupport School"
-        Journals = "$userProfile\Documents\Journals"
-        Recordings = "$userProfile\Documents\My Recordings"
-        StudentConfig = "$programFiles\NetSupport\NetSupport School\client32u.ini"
-        TechClassLists = "$appData\NetSupport\NetSupport School"  # Same as Tutor Class Lists
-    }
+    return @(
+        "$pf\NetSupport",
+        "$pfx86\NetSupport",
+        "$pf\NetSupport\NetSupport School",
+        "$pfx86\NetSupport\NetSupport School",
+        "$appdata\NetSupport",
+        "$user\Documents\Journals",
+        "$user\Documents\My Recordings",
+        "$pf\NetSupport\NetSupport School\client32u.ini",
+        "$pfx86\NetSupport\NetSupport School\client32u.ini"
+    )
 }
 
-# Function to list folders
-function List-Folders {
-    $paths = Get-NetSupportPaths
-    Write-Host "NetSupport School Folder/File Locations:" -ForegroundColor Cyan
-    foreach ($key in $paths.Keys) {
-        $path = $paths[$key]
-        if (Test-Path $path) {
-            Write-Host "$key : $path (Exists)" -ForegroundColor Green
+$NetSupportPaths = Get-NetSupportPaths
+
+# ==============================
+# Target Processes
+# ==============================
+$TargetProcesses = @(
+    "client32",
+    "RevitAccelerator",
+    "Runplugin64",
+    "runplugin",
+    "node",
+    "msedge",
+    "smartscreen",
+    "CollaborationKeysController"
+)
+
+# ==============================
+# List Paths
+# ==============================
+function List-NetSupport {
+    Clear-Host
+    Write-Host "NetSupport Locations:" -ForegroundColor Cyan
+    foreach ($p in $NetSupportPaths) {
+        if (Test-Path $p) {
+            Write-Host "[FOUND] $p" -ForegroundColor Green
         } else {
-            Write-Host "Cannot find folder/file: $path" -ForegroundColor Yellow
+            Write-Host "[NOT FOUND] $p" -ForegroundColor Yellow
         }
     }
+    Pause
 }
 
-# Function to remove all folders/files
-function Remove-AllFolders {
-    $paths = Get-NetSupportPaths
-    Write-Host "This will delete ALL listed folders/files (if they exist). Confirm? (y/n): " -NoNewline
-    $confirm = Read-Host
-    if ($confirm -ne 'y') { return }
+# ==============================
+# Remove All
+# ==============================
+function Remove-AllNetSupport {
+    Clear-Host
+    Write-Host "WARNING: This will delete ALL NetSupport data!" -ForegroundColor Red
+    $c = Read-Host "Type Y to continue"
+    if ($c -ne "Y") { return }
 
-    foreach ($key in $paths.Keys) {
-        $path = $paths[$key]
-        if (Test-Path $path) {
+    foreach ($p in $NetSupportPaths) {
+        if (Test-Path $p) {
             try {
-                if ($key -eq 'StudentConfig') {
-                    Remove-Item -Path $path -Force  # File removal
-                } else {
-                    Remove-Item -Path $path -Recurse -Force  # Folder removal
-                }
-                Write-Host "Removed: $path" -ForegroundColor Green
+                Remove-Item $p -Recurse -Force -ErrorAction Stop
+                Write-Host "Removed: $p" -ForegroundColor Green
             } catch {
-                Write-Host "Failed to remove: $path ($_.Exception.Message)" -ForegroundColor Red
+                Write-Host "Failed: $p" -ForegroundColor Red
             }
-        } else {
-            Write-Host "Cannot find folder/file: $path" -ForegroundColor Yellow
         }
     }
-    Write-Host "Removal complete. Reboot recommended for full effect."
+    Pause
 }
 
-# Function to remove specific folder/file
+# ==============================
+# Remove Specific
+# ==============================
 function Remove-Specific {
-    $paths = Get-NetSupportPaths
-    Write-Host "Available options to remove:" -ForegroundColor Cyan
+    Clear-Host
     $i = 1
-    foreach ($key in $paths.Keys) {
-        Write-Host "$i. $key : $($paths[$key])"
+    foreach ($p in $NetSupportPaths) {
+        Write-Host "$i. $p"
         $i++
     }
-    Write-Host "$i. Custom path (enter your own)"
-    Write-Host ""
-    $choice = Read-Host "Choose a number or enter custom path"
-    
-    if ($choice -match '^\d+$' -and [int]$choice -le $paths.Count) {
-        $selectedKey = $paths.Keys[[int]$choice - 1]
-        $path = $paths[$selectedKey]
-    } elseif ($choice -eq $i) {
-        $path = Read-Host "Enter custom path"
-    } else {
-        Write-Host "Invalid choice." -ForegroundColor Red
-        return
-    }
-    
-    if (Test-Path $path) {
-        Write-Host "Confirm removal of: $path (y/n): " -NoNewline
-        $confirm = Read-Host
-        if ($confirm -eq 'y') {
-            try {
-                if (Test-Path $path -PathType Leaf) {
-                    Remove-Item -Path $path -Force  # File
-                } else {
-                    Remove-Item -Path $path -Recurse -Force  # Folder
-                }
-                Write-Host "Removed: $path" -ForegroundColor Green
-            } catch {
-                Write-Host "Failed to remove: $path ($_.Exception.Message)" -ForegroundColor Red
-            }
+    $choice = Read-Host "Choose number"
+    if ($choice -match '^\d+$' -and $choice -le $NetSupportPaths.Count) {
+        $path = $NetSupportPaths[$choice - 1]
+        if (Test-Path $path) {
+            Remove-Item $path -Recurse -Force
+            Write-Host "Removed: $path" -ForegroundColor Green
         }
-    } else {
-        Write-Host "Cannot find folder/file: $path" -ForegroundColor Yellow
     }
+    Pause
 }
 
-# Function to auto-find NetSupport folders and list contents
-function Auto-FindNetSupport {
-    Write-Host "Choose scan locations:" -ForegroundColor Cyan
-    Write-Host "1. Program Files"
-    Write-Host "2. Program Files (x86)"
-    Write-Host "3. AppData"
-    Write-Host "4. All"
-    $locationChoice = Read-Host "Enter your choice (1-4)"
+# ==============================
+# AUTO SCAN
+# ==============================
+function Auto-ScanNetSupport {
+    Clear-Host
+    Write-Host "AUTO SCAN RESULTS" -ForegroundColor Cyan
 
-    $scanPaths = @()
-    switch ($locationChoice) {
-        1 { $scanPaths = @($env:ProgramFiles) }
-        2 { $scanPaths = @("${env:ProgramFiles(x86)}") }
-        3 { $scanPaths = @($env:APPDATA) }
-        4 { $scanPaths = @($env:ProgramFiles, "${env:ProgramFiles(x86)}", $env:APPDATA) }
-        default { Write-Host "Invalid choice. Scanning all by default." -ForegroundColor Yellow; $scanPaths = @($env:ProgramFiles, "${env:ProgramFiles(x86)}", $env:APPDATA) }
-    }
-
-    $foundFolders = @()
-    Write-Host "Scanning selected locations for folders named 'NetSupport'... This may take a moment." -ForegroundColor Cyan
-    foreach ($scanPath in $scanPaths) {
-        if (Test-Path $scanPath) {
-            $netsupportFolders = Get-ChildItem -Path $scanPath -Directory -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq "NetSupport" }
-            foreach ($folder in $netsupportFolders) {
-                $foundFolders += $folder.FullName
-            }
+    Write-Host "`n[FOLDERS]" -ForegroundColor White
+    foreach ($p in $NetSupportPaths) {
+        if (Test-Path $p) {
+            Write-Host "FOUND: $p" -ForegroundColor Green
         }
     }
 
-    if ($foundFolders.Count -eq 0) {
-        Write-Host "No folders named 'NetSupport' found in selected locations." -ForegroundColor Yellow
-        return
+    Write-Host "`n[PROCESSES]" -ForegroundColor White
+    foreach ($proc in $TargetProcesses) {
+        if (Get-Process -Name $proc -ErrorAction SilentlyContinue) {
+            Write-Host "RUNNING: $proc.exe" -ForegroundColor Green
+        }
     }
 
-    Write-Host "Found NetSupport folders:" -ForegroundColor Green
-    $i = 1
-    foreach ($folder in $foundFolders) {
-        Write-Host "$i. $folder"
-        # List contents (subfolders and files, up to 10 items for brevity)
-        $contents = Get-ChildItem -Path $folder -ErrorAction SilentlyContinue
-        $subfolders = $contents | Where-Object { $_.PSIsContainer }
-        $files = $contents | Where-Object { -not $_.PSIsContainer }
-        if ($subfolders) {
-            Write-Host "  Subfolders:"
-            $subfolders | Select-Object -First 5 | ForEach-Object { Write-Host "    - $($_.Name)" }
-            if ($subfolders.Count -gt 5) { Write-Host "    ... and $($subfolders.Count - 5) more subfolders" }
-        }
-        if ($files) {
-            Write-Host "  Files:"
-            $files | Select-Object -First 5 | ForEach-Object { Write-Host "    - $($_.Name)" }
-            if ($files.Count -gt 5) { Write-Host "    ... and $($files.Count - 5) more files" }
-        }
-        $i++
+    Write-Host "`n[SERVICES]" -ForegroundColor White
+    $svc = Get-Service | Where-Object {
+        $_.Name -match "NetSupport" -or $_.DisplayName -match "NetSupport"
     }
-
-    Write-Host ""
-    $choice = Read-Host "Enter the number of the folder to remove (or '0' to cancel)"
-    if ($choice -match '^\d+$' -and [int]$choice -ge 1 -and [int]$choice -le $foundFolders.Count) {
-        $selectedPath = $foundFolders[[int]$choice - 1]
-        Write-Host "Confirm removal of: $selectedPath and all contents? (y/n): " -NoNewline
-        $confirm = Read-Host
-        if ($confirm -eq 'y') {
-            try {
-                Remove-Item -Path $selectedPath -Recurse -Force
-                Write-Host "Removed: $selectedPath" -ForegroundColor Green
-            } catch {
-                Write-Host "Failed to remove: $selectedPath ($_.Exception.Message)" -ForegroundColor Red
-            }
+    if ($svc) {
+        $svc | ForEach-Object {
+            Write-Host "FOUND: $($_.Name) ($($_.Status))" -ForegroundColor Green
         }
     } else {
-        Write-Host "Cancelled or invalid choice." -ForegroundColor Yellow
+        Write-Host "No NetSupport services found."
     }
+
+    Pause
 }
 
-# Main menu loop
+# ==============================
+# Kill Tasks
+# ==============================
+function Kill-NetSupportTasks {
+    Clear-Host
+    Write-Host "Killing selected processes..." -ForegroundColor Red
+
+    foreach ($proc in $TargetProcesses) {
+        $p = Get-Process -Name $proc -ErrorAction SilentlyContinue
+        if ($p) {
+            Stop-Process -Name $proc -Force
+            Write-Host "Killed: $proc.exe" -ForegroundColor Green
+        } else {
+            Write-Host "Not running: $proc.exe" -ForegroundColor Yellow
+        }
+    }
+    Pause
+}
+
+# ==============================
+# MENU
+# ==============================
 do {
     Clear-Host
-    Write-Host "NetSupport School Remover Menu" -ForegroundColor Magenta
-    Write-Host "1. List NetSupport School Folders/Files"
-    Write-Host "2. Remove All NetSupport School Folders/Files"
-    Write-Host "3. Remove Specific Folder/File"
-    Write-Host "4. Auto-Find NetSupport Folders and List Contents"
-    Write-Host "5. Exit"
-    Write-Host ""
-    $choice = Read-Host "Choose an option (1-5)"
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host " NetSupport School Remover v2" -ForegroundColor White
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host "1. List NetSupport folders/files"
+    Write-Host "2. Remove ALL NetSupport data"
+    Write-Host "3. Remove specific folder/file"
+    Write-Host "4. AUTO SCAN NetSupport"
+    Write-Host "5. Kill NetSupport-related tasks"
+    Write-Host "6. Exit"
+    Write-Host "========================================" -ForegroundColor Cyan
+
+    $choice = Read-Host "Choose (1-6)"
 
     switch ($choice) {
-        1 { List-Folders; Read-Host "Press Enter to continue" }
-        2 { Remove-AllFolders; Read-Host "Press Enter to continue" }
-        3 { Remove-Specific; Read-Host "Press Enter to continue" }
-        4 { Auto-FindNetSupport; Read-Host "Press Enter to continue" }
-        5 { Write-Host "Exiting..." }
-        default { Write-Host "Invalid choice. Try again." -ForegroundColor Red; Read-Host "Press Enter to continue" }
+        1 { List-NetSupport }
+        2 { Remove-AllNetSupport }
+        3 { Remove-Specific }
+        4 { Auto-ScanNetSupport }
+        5 { Kill-NetSupportTasks }
+        6 { break }
     }
-} while ($choice -ne 5)
+} while ($true)
