@@ -33,6 +33,8 @@ Updated Patch 2
 **RUN NetSupport Remover**
 Run file name "RunRemover.bat"
 
+<img width="219" height="107" alt="image" src="https://github.com/user-attachments/assets/4e45dbe6-020c-460f-bbb1-c78bb3393422" />
+
 
 ========================================
  NetSupport School Remover  Preview ui
@@ -46,6 +48,7 @@ Run file name "RunRemover.bat"
 6. Exit
 ========================================
 Choose (1-6):
+<img width="332" height="175" alt="image" src="https://github.com/user-attachments/assets/0fcbcdf0-645d-488f-92db-d4310f6bc2f6" />
 
 
 ⚙️ Requirements
