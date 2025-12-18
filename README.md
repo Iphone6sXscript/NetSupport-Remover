@@ -18,12 +18,35 @@ It provides a simple, menu-driven interface and is intended for authorized admin
 
 🔐 Designed to be run with Administrator privileges
 
-🧭 Menu Preview
-NetSupport School Remover Menu
-1. List NetSupport School Folders/Files
-2. Remove All NetSupport School Folders/Files
-3. Remove Specific Folder/File
-4. Exit
+**PATCH 2**
+
+Better UI 
+Updated Patch 2
+-Added Kill Task
+-Fix Ui
+-better Scan
+-buy you a kfc :D
+-Add file
+-Autorun.inf for win 7 to run it self
+-RunRemover to help set up easyer
+
+**RUN NetSupport Remover**
+Run file name "RunRemover.bat"
+
+
+========================================
+ NetSupport School Remover  Preview ui
+
+========================================
+1. List NetSupport folders/files
+2. Remove ALL NetSupport data
+3. Remove specific folder/file
+4. AUTO SCAN NetSupport
+5. Kill NetSupport-related tasks
+6. Exit
+========================================
+Choose (1-6):
+
 
 ⚙️ Requirements
 
