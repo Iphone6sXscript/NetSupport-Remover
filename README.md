@@ -1,3 +1,7 @@
+<img width="214" height="114" alt="ascii-art-text" src="https://github.com/user-attachments/assets/f014dff4-2420-49c7-aa9f-8d24b832e89a" />
+
+<img width="1237" height="114" alt="ascii-art-text (1)" src="https://github.com/user-attachments/assets/2bd699f1-03e8-4c9a-8566-1227523524b9" />
+
 # NetSupport-Remover
 The NetSupport Remover Free from Control
 NSR — NetSupport School Remover
@@ -28,7 +32,7 @@ Updated Patch 2
 -buy you a kfc :D
 -Add file
 -Autorun.inf for win 7 to run it self
--RunRemover to help set up easyer
+-RunRemover Setup helper
 
 **RUN NetSupport Remover**
 Run file name "RunRemover.bat"
