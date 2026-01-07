@@ -10,6 +10,6 @@ if %errorLevel% == 0 (
 )
 
 echo Setting execution policy and running NetSupport Remover...
-powershell -ExecutionPolicy Bypass -File "F:\NetSupportSchoolRemover.ps1"
+powershell -ExecutionPolicy Bypass -File "%~dp0NetSupportSchoolRemover.ps1"
 
 pause
