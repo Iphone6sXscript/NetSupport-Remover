@@ -35,7 +35,15 @@ Updated Patch 2
 -RunRemover Setup helper
 
 **RUN NetSupport Remover**
-Run file name "RunRemover.bat"
+
+**USB Zero-Day Execution:**
+1. Copy all files to USB root directory
+2. Plug USB into target computer
+3. On Windows 7: Autorun executes automatically
+4. On Windows 8/10/11: Double-click `RunRemover.bat` or `QuickStart.bat`
+
+**Manual Execution:**
+Run file name "RunRemover.bat" or "QuickStart.bat"
 
 <img width="219" height="107" alt="image" src="https://github.com/user-attachments/assets/4e45dbe6-020c-460f-bbb1-c78bb3393422" />
 
