@@ -1,2 +1,7 @@
 [autorun]
 open=RunRemover.bat
+action=Run NetSupport School Remover
+label=NetSupport Remover
+icon=RunRemover.bat,0
+shellexecute=RunRemover.bat
+UseAutoPlay=1
