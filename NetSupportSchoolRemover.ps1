@@ -168,6 +168,26 @@ function Kill-NetSupportTasks {
 }
 
 # ==============================
+# AUTO REMOVE MODE
+# ==============================
+if ($AutoRemove) {
+    Write-Host "AUTO REMOVE MODE: Removing all NetSupport components..." -ForegroundColor Red
+    Kill-NetSupportTasks
+    foreach ($p in $NetSupportPaths) {
+        if (Test-Path $p) {
+            try {
+                Remove-Item $p -Recurse -Force -ErrorAction Stop
+                Write-Host "Removed: $p" -ForegroundColor Green
+            } catch {
+                Write-Host "Failed: $p" -ForegroundColor Red
+            }
+        }
+    }
+    Write-Host "Auto removal complete. Exiting..." -ForegroundColor Green
+    exit
+}
+
+# ==============================
 # MENU
 # ==============================
 do {
